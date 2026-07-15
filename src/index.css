@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fredoka", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom glow animations and Louisiana-themed styling variables */
+@keyframes swamp-glow {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(251, 191, 36, 0.4), 0 0 12px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.7), 0 0 20px rgba(251, 191, 36, 0.4);
+  }
+}
+
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    box-shadow: 0 0 .5rem rgba(251, 191, 36, 0.4), inset 0 0 .5rem rgba(251, 191, 36, 0.4);
+  }
+  20%, 24%, 55% {
+    box-shadow: none;
+  }
+}
+
+.animate-glow {
+  animation: swamp-glow 3s infinite ease-in-out;
+}
+
+.animate-neon {
+  animation: neon-flicker 4s infinite alternate;
+}
+
+/* Glass panel background */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Mardi Gras Gradient */
+.mardi-gras-gradient {
+  background: linear-gradient(135deg, #4C1D95 0%, #D97706 50%, #059669 100%);
+}
+
+/* Chat bubble styling overrides */
+.chat-bubble-self {
+  border-radius: 20px 20px 0 20px !important;
+}
+
+.chat-bubble-other {
+  border-radius: 20px 20px 20px 0 !important;
+}
+
+/* Custom Scrollbar for the vibrant theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #3B1270;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.4);
+}
+
+

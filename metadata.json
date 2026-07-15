@@ -1,0 +1,11 @@
+{
+  "name": "Louisiana Chatbox",
+  "description": "A social media site for Louisiana locals featuring real-time regional chatrooms, anonymous local buzz feeds, and live video clips and video chat rooms.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

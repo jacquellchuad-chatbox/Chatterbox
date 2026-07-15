@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A message in a chat room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "parish": { "type": "string" },
+        "userType": { "type": "string" },
+        "avatarColor": { "type": "string" },
+        "content": { "type": "string", "maxLength": 1000 },
+        "timestamp": { "type": "number" },
+        "isAnonymous": { "type": "boolean" },
+        "anonTotem": { "type": "string" },
+        "mediaUrl": { "type": "string" }
+      },
+      "required": ["id", "roomId", "userId", "username", "parish", "userType", "avatarColor", "content", "timestamp", "isAnonymous", "anonTotem"]
+    },
+    "AnonymousPost": {
+      "title": "AnonymousPost",
+      "description": "A forum post in Bayou Buzz",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "maxLength": 100 },
+        "content": { "type": "string", "maxLength": 5000 },
+        "category": { "type": "string", "enum": ["slang", "food", "whispers", "festivals", "swamp-life", "general"] },
+        "parish": { "type": "string" },
+        "color": { "type": "string" },
+        "upvotes": { "type": "number" },
+        "downvotes": { "type": "number" },
+        "timestamp": { "type": "number" },
+        "anonTotem": { "type": "string" },
+        "spiciness": { "type": "string", "enum": ["mild", "spicy", "cayenne"] }
+      },
+      "required": ["id", "title", "content", "category", "parish", "color", "upvotes", "downvotes", "timestamp", "anonTotem", "spiciness"]
+    },
+    "PostComment": {
+      "title": "PostComment",
+      "description": "A comment on a Bayou Buzz post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "content": { "type": "string", "maxLength": 500 },
+        "timestamp": { "type": "number" },
+        "anonTotem": { "type": "string" },
+        "parish": { "type": "string" }
+      },
+      "required": ["id", "postId", "content", "timestamp", "anonTotem", "parish"]
+    },
+    "VideoClip": {
+      "title": "VideoClip",
+      "description": "A short video recorded from Louisiana parishes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "maxLength": 100 },
+        "caption": { "type": "string", "maxLength": 500 },
+        "videoUrl": { "type": "string" },
+        "parish": { "type": "string" },
+        "anonTotem": { "type": "string" },
+        "likes": { "type": "number" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "title", "caption", "videoUrl", "parish", "anonTotem", "likes", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Global collection of chat room messages"
+    },
+    "/posts/{postId}": {
+      "schema": "AnonymousPost",
+      "description": "Global collection of anonymous posts on Bayou Buzz"
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": "PostComment",
+      "description": "Subcollection of comments for a specific post"
+    },
+    "/clips/{clipId}": {
+      "schema": "VideoClip",
+      "description": "Global collection of recorded video clips"
+    }
+  }
+}

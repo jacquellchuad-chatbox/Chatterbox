@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity validation functions
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['id', 'roomId', 'userId', 'username', 'parish', 'userType', 'avatarColor', 'content', 'timestamp', 'isAnonymous', 'anonTotem'])
+        && data.keys().size() == 11
+        && data.id is string && data.id.size() <= 128
+        && data.roomId is string && data.roomId.size() <= 64
+        && data.userId is string && data.userId.size() <= 128
+        && data.username is string && data.username.size() <= 64
+        && data.parish is string && data.parish.size() <= 64
+        && data.userType is string && data.userType.size() <= 64
+        && data.avatarColor is string && data.avatarColor.size() <= 16
+        && data.content is string && data.content.size() >= 1 && data.content.size() <= 1000
+        && data.timestamp == request.time
+        && data.isAnonymous is bool
+        && data.anonTotem is string && data.anonTotem.size() <= 64;
+    }
+
+    function isValidAnonymousPost(data) {
+      return data.keys().hasAll(['id', 'title', 'content', 'category', 'parish', 'color', 'upvotes', 'downvotes', 'timestamp', 'anonTotem', 'spiciness'])
+        && data.keys().size() == 11
+        && data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 100
+        && data.content is string && data.content.size() >= 1 && data.content.size() <= 5000
+        && data.category is string && (data.category == 'slang' || data.category == 'food' || data.category == 'whispers' || data.category == 'festivals' || data.category == 'swamp-life' || data.category == 'general')
+        && data.parish is string && data.parish.size() <= 64
+        && data.color is string && data.color.size() <= 200
+        && data.upvotes is int && data.upvotes >= 0
+        && data.downvotes is int && data.downvotes >= 0
+        && data.timestamp == request.time
+        && data.anonTotem is string && data.anonTotem.size() <= 64
+        && data.spiciness is string && (data.spiciness == 'mild' || data.spiciness == 'spicy' || data.spiciness == 'cayenne');
+    }
+
+    function isValidPostComment(data) {
+      return data.keys().hasAll(['id', 'postId', 'content', 'timestamp', 'anonTotem', 'parish'])
+        && data.keys().size() == 6
+        && data.id is string && data.id.size() <= 128
+        && data.postId is string && data.postId.size() <= 128
+        && data.content is string && data.content.size() >= 1 && data.content.size() <= 500
+        && data.timestamp == request.time
+        && data.anonTotem is string && data.anonTotem.size() <= 64
+        && data.parish is string && data.parish.size() <= 64;
+    }
+
+    function isValidVideoClip(data) {
+      return data.keys().hasAll(['id', 'title', 'caption', 'videoUrl', 'parish', 'anonTotem', 'likes', 'timestamp'])
+        && data.keys().size() == 8
+        && data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 100
+        && data.caption is string && data.caption.size() <= 500
+        && data.videoUrl is string && data.videoUrl.size() <= 500
+        && data.parish is string && data.parish.size() <= 64
+        && data.anonTotem is string && data.anonTotem.size() <= 64
+        && data.likes is int && data.likes >= 0
+        && data.timestamp == request.time;
+    }
+
+    // Collection match blocks
+    match /messages/{messageId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() 
+        && isValidId(messageId) 
+        && isValidChatMessage(incoming())
+        && incoming().userId == request.auth.uid;
+      allow update, delete: if false; // Messages are immutable and cannot be updated/deleted
+    }
+
+    match /posts/{postId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn()
+        && isValidId(postId)
+        && isValidAnonymousPost(incoming())
+        && incoming().upvotes == 0
+        && incoming().downvotes == 0;
+      
+      allow update: if isSignedIn()
+        && isValidAnonymousPost(incoming())
+        && (
+          // Action 1: Vote (Upvote or Downvote)
+          (
+            (incoming().upvotes == existing().upvotes + 1 && incoming().downvotes == existing().downvotes) ||
+            (incoming().downvotes == existing().downvotes + 1 && incoming().upvotes == existing().upvotes)
+          ) && incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'downvotes', 'spiciness'])
+        );
+      
+      allow delete: if false; // Posts are immutable and cannot be deleted
+      
+      // Comments Subcollection
+      match /comments/{commentId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn()
+          && isValidId(commentId)
+          && isValidPostComment(incoming())
+          && incoming().postId == postId
+          && exists(/databases/$(database)/documents/posts/$(postId)); // Master Gate Validation
+        allow update, delete: if false; // Comments are immutable
+      }
+    }
+
+    match /clips/{clipId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn()
+        && isValidId(clipId)
+        && isValidVideoClip(incoming())
+        && incoming().likes == 0;
+      
+      allow update: if isSignedIn()
+        && isValidVideoClip(incoming())
+        && (
+          // Action: Like clip
+          incoming().likes == existing().likes + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly(['likes'])
+        );
+      
+      allow delete: if false; // Video clips are immutable
+    }
+  }
+}
